@@ -45,6 +45,28 @@ const deleteAccountService = async (accountID) => {
   }
 }
 
+const recordTx = async (tx) => {
+  const transaction = await db.sequelize.transaction()
+  try {
+    const insertRecord = await tx.addTransaction(transaction)
+    await transaction.commit()
+    return insertRecord
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const torecordTx = async (tx) => {
+  const transaction = await db.sequelize.transaction()
+  try {
+    const insertRecord = await tx.toaddTransaction(transaction)
+    await transaction.commit()
+    return insertRecord
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 const depositService = async (account,accountID,customerID,bankID) => {
   const transaction = await db.sequelize.transaction()
   try {
@@ -96,4 +118,6 @@ module.exports = {
     withdrawService,
     transferService,
     transferToOtherService,
+    recordTx,
+    torecordTx
 }
