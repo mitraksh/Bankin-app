@@ -48,6 +48,7 @@ const deleteBankService = async (bankID) => {
   const transaction = await db.sequelize.transaction()
   try {
     const bankdelete = await Bank.deleteBank(transaction,bankID)
+    await transaction.commit()
     return bankdelete
   } catch (error) {
     console.error(error)

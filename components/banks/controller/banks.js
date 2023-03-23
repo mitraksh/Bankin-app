@@ -10,7 +10,6 @@ const { Bank } = require('../../../view/bank')
 const createBank = async (req, res, next) => {
   try {
     const adminLogin = req.locals.user.isAdmin
-    console.log("admin or not",req.locals.user.isAdmin)  
     if(adminLogin == true){
     const { name, abbreviation } = req.body
     const bank = new Bank(name, abbreviation)

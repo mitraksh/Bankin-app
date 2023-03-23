@@ -24,7 +24,7 @@ const db = require('../../../models')
 const createAccount = async (req, res, next) => {
   try {
     const adminLogin = req.locals.user.isAdmin
-    const fullname = req.locals.firstName + " "+ req.locals.lastName 
+    const fullname = req.locals.user.firstName + " "+ req.locals.user.lastName 
     if(adminLogin == false){
 
     const { accountName,bankID } = req.body 
@@ -35,7 +35,7 @@ const createAccount = async (req, res, next) => {
       res.status(StatusCodes.CREATED).json(accountData)
     }else{
       const getallbanks = await getAllBanksService()
-      res.status(StatusCodes.EXPECTATION_FAILED).send("Bank not found, try another bank from the list",getallbanks);
+      res.status(StatusCodes.EXPECTATION_FAILED).send("Bank not found, try another bank from the list \n"+JSON.stringify(getallbanks))
   
     }
     
@@ -98,7 +98,9 @@ const depositAmount = async (req,res,next) =>{
     if(adminLogin == false){
       const {deposit,bankID} = req.body
       const getAccount = await getAccountService(req.params.accountID)
-      console.log("getAccount",getAccount.balance)
+      // console.log("getAccount",getAccount.balance)
+      const checkBank = await getBankService(bankID)
+      if(checkBank){
       if(selfID == getAccount.cust_id){
         const newBalance = getAccount.balance + deposit
         const account = new Account(getAccount.acc_name,getAccount.cust_name,getAccount.bank_id,req.locals.user.id,newBalance)
@@ -109,6 +111,12 @@ const depositAmount = async (req,res,next) =>{
       }else{
         res.status(StatusCodes.OK).send("You cannot deposit into another customer's account")
       }
+    }else{
+      const getallbanks = await getAllBanksService()
+      res.status(StatusCodes.EXPECTATION_FAILED).send("Bank not found, try another bank from the list \n"+JSON.stringify(getallbanks))
+  
+    }
+    
       
     }else{
       res.status(StatusCodes.EXPECTATION_FAILED).send("Only Customers can DEPOSIT into their Accounts");
@@ -129,7 +137,9 @@ const withdrawAmount = async (req,res,next) =>{
     const {withdraw,bankID} = req.body
     const accID = req.params.accountID
     const getAccount = await getAccountService(req.params.accountID)
-    console.log("cust id",getAccount.cust_id)
+    // console.log("cust id",getAccount.cust_id)
+    const checkBank = await getBankService(bankID)
+    if(checkBank){
     if(selfID == getAccount.cust_id){
       if((getAccount.balance - withdraw )<= 0){
         res.status(StatusCodes.OK).send("NO balance left in your Account!!! Transaction Failed")
@@ -146,6 +156,11 @@ const withdrawAmount = async (req,res,next) =>{
       res.status(StatusCodes.OK).send("You cannot withdraw from another customer's account")
 
     }
+  }else{
+    const getallbanks = await getAllBanksService()
+    res.status(StatusCodes.EXPECTATION_FAILED).send("Bank not found, try another bank from the list \n"+JSON.stringify(getallbanks))
+
+  }
    
   }else{
     res.status(StatusCodes.EXPECTATION_FAILED).send("Only Customers can WITHDRAW into their Accounts");
@@ -165,6 +180,8 @@ const transferToOthers = async (req,res,next) =>{
   if(adminLogin == false){
     const {transfer,toAccountID, tocustID, tobankID} = req.body
     const accID = req.params.accountID
+    const checkBank = await getBankService(bankID)
+    if(checkBank){
     if(toAccountID == accID){
       res.status(StatusCodes.EXPECTATION_FAILED).send("YOU CANNOT TRANSFER TO THE SAME ACCOUNT");
       return 
@@ -189,7 +206,11 @@ const transferToOthers = async (req,res,next) =>{
     const torecordtx = await torecordTx(totx)
     console.log("to acc")
     res.status(StatusCodes.OK).json(transferToOtherServices)
+  }else{
+    const getallbanks = await getAllBanksService()
+    res.status(StatusCodes.EXPECTATION_FAILED).send("Bank not found, try another bank from the list \n"+JSON.stringify(getallbanks))
 
+  }
   }else{
     res.status(StatusCodes.EXPECTATION_FAILED).send("Only Customers can TRANSFER into their Accounts");
 
