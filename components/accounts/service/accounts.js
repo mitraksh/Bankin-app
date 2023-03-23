@@ -1,6 +1,7 @@
 const { Account } = require('../../../view/account')
 const jwt = require('../../../middleware/jwt');
-const db = require('../../../models')
+const db = require('../../../models');
+const { Transactions } = require('../../../view/transactions');
 
 
 const addAccountService = async account => {
@@ -109,6 +110,15 @@ const transferToOtherService = async (account,accountID,customerID,bankID) => {
     console.error(error)
   }
 }
+
+const getLedgerService = async (bankID) => {
+  try {
+    const getLedger = await Transactions.getTransactionsbyBankID(bankID)
+    return getLedger
+  } catch (error) {
+    console.error(error)
+  }
+}
 module.exports = {
     addAccountService,
     getAccountService,
@@ -119,5 +129,6 @@ module.exports = {
     transferService,
     transferToOtherService,
     recordTx,
-    torecordTx
+    torecordTx,
+    getLedgerService
 }

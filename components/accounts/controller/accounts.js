@@ -10,6 +10,7 @@ const {
     transferToOtherService,
     recordTx,
     torecordTx,
+    getLedgerService
 } = require('../service/accounts')
 const {
   getBankService,
@@ -221,6 +222,17 @@ const transferToOthers = async (req,res,next) =>{
   }
 }
 
+const getBankLedger = async (req,res,next) => {
+  try {
+    const getLedger = await getLedgerService(req.params.bankID)
+    res.status(StatusCodes.OK).json(getLedger)
+    
+  } catch (error) {
+    console.error(error)
+    next(error)
+  }
+}
+
 module.exports = {
   createAccount,
   getAccount,
@@ -228,5 +240,6 @@ module.exports = {
   deleteAccounts,
   depositAmount,
   withdrawAmount,
-  transferToOthers
+  transferToOthers,
+  getBankLedger
 }
