@@ -8,12 +8,16 @@ const {
     withdrawService,
     transferService,
     transferToOtherService,
+    recordTx,
+    torecordTx,
 } = require('../service/accounts')
 const {
   getBankService,
   getAllBanksService
 } = require('../../banks/service/banks')
 const { Account } = require('../../../view/account')
+const { Transactions } = require('../../../view/transactions')
+
 const db = require('../../../models')
 
 
@@ -97,8 +101,10 @@ const depositAmount = async (req,res,next) =>{
       console.log("getAccount",getAccount.balance)
       if(selfID == getAccount.cust_id){
         const newBalance = getAccount.balance + deposit
-        const account = new Account(getAccount.acc_name,getAccount.cust_name,bankID,req.locals.user.id,newBalance)
+        const account = new Account(getAccount.acc_name,getAccount.cust_name,getAccount.bank_id,req.locals.user.id,newBalance)
         const depositIntoAccount = await depositService(account,req.params.accountID,req.locals.user.id,bankID)
+        const tx = new Transactions(selfID,null,req.params.accountID,null,getAccount.bank_id,null,deposit,"Credited")
+        const recordtx = await recordTx(tx)
         res.status(StatusCodes.OK).json(depositIntoAccount)
       }else{
         res.status(StatusCodes.OK).send("You cannot deposit into another customer's account")
@@ -132,6 +138,8 @@ const withdrawAmount = async (req,res,next) =>{
       const newBalance = getAccount.balance - withdraw
       const account = new Account(getAccount.acc_name,getAccount.cust_name,bankID,req.locals.user.id,newBalance)
       const withdrawFromAccount = await withdrawService(account,req.params.accountID,req.locals.user.id,bankID)
+      const tx = new Transactions(selfID,null,req.params.accountID,null,getAccount.bank_id,null,withdraw,"Debited")
+      const recordtx = await recordTx(tx)
       res.status(StatusCodes.OK).json(withdrawFromAccount)
   
     }else{
@@ -150,19 +158,20 @@ const withdrawAmount = async (req,res,next) =>{
 }
 
 const transferToOthers = async (req,res,next) =>{
-  const transaction = await db.sequelize.transaction()
   try {
     const adminLogin = req.locals.user.isAdmin
+    const selfID = req.locals.user.id
+
   if(adminLogin == false){
-    const {transfer,toAccountID, custID, bankID} = req.body
+    const {transfer,toAccountID, tocustID, tobankID} = req.body
     const accID = req.params.accountID
     if(toAccountID == accID){
-      res.status(StatusCodes.EXPECTATION_FAILED).send("yOU CANNOT TRANSFER TO THE SAME ACCOUNT");
+      res.status(StatusCodes.EXPECTATION_FAILED).send("YOU CANNOT TRANSFER TO THE SAME ACCOUNT");
       return 
     }
     const getAccount = await getAccountService(req.params.accountID)
     const getToAccount = await getAccountService(toAccountID)
-    if((getAccount.balance - withdraw )<= 0){
+    if((getAccount.balance - transfer )<= 0){
       res.status(StatusCodes.OK).send("NO balance left in your Account!!! Transaction Failed")
       return 
     }
@@ -170,13 +179,15 @@ const transferToOthers = async (req,res,next) =>{
     const newToBalance = getToAccount.balance + transfer
     
     const account = new Account(getAccount.acc_name,getAccount.cust_name,getAccount.bank_id,req.locals.user.id,newBalance)
-    const transferServices =  await transferService(account,accID,req.locals.user.id,bankID)
-    res.status(StatusCodes.OK).json(transferServices)
-    
-    const accountTo = new Account(getToAccount.acc_name,getToAccount.cust_name,toAccountID,custID,newToBalance)
-    const transferToOtherServices =  await transferService(accountTo,toAccountID,custID,bankID)
-
-    await transaction.commit()
+    const transferServices =  await transferService(account,accID,req.locals.user.id,getAccount.bank_id,)
+    const tx = new Transactions(selfID,tocustID,req.params.accountID,toAccountID,getAccount.bank_id,tobankID,transfer,"Debited")
+    const recordtx = await recordTx(tx)
+    console.log("acc")
+    const accountTo = new Account(getToAccount.acc_name,getToAccount.cust_name,toAccountID,tocustID,newToBalance)
+    const transferToOtherServices =  await transferToOtherService(accountTo,toAccountID,tocustID,tobankID)
+    const totx = new Transactions(tocustID,selfID,toAccountID,req.params.accountID,tobankID,getAccount.bank_id,transfer,"Credited")
+    const torecordtx = await torecordTx(totx)
+    console.log("to acc")
     res.status(StatusCodes.OK).json(transferToOtherServices)
 
   }else{

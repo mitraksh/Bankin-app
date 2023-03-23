@@ -22,11 +22,11 @@ module.exports = (sequelize, DataTypes) => {
     to_bank_id: DataTypes.INTEGER,
     amount: DataTypes.INTEGER,
     tx_type: DataTypes.STRING,
-    tx_date: DataTypes.DATE
   }, {
     sequelize,
     modelName: 'transaction',
     underscored: true,
+    paranoid:true
   });
   return transaction;
 };

@@ -10,31 +10,36 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       cust_id: {
+        allowNull: false,
         type: Sequelize.INTEGER
       },
       to_cust_id: {
+        allowNull: true,
         type: Sequelize.INTEGER
       },
       acc_id: {
+        allowNull: false,
         type: Sequelize.INTEGER
       },
       to_acc_id: {
+        allowNull: true,
         type: Sequelize.INTEGER
       },
       bank_id: {
+        allowNull: false,
         type: Sequelize.INTEGER
       },
       to_bank_id: {
+        allowNull: true,
         type: Sequelize.INTEGER
       },
       amount: {
+        allowNull: false,
         type: Sequelize.INTEGER
       },
       tx_type: {
+        allowNull: false,
         type: Sequelize.STRING
-      },
-      tx_date: {
-        type: Sequelize.DATE
       },
       created_at: {
         allowNull: false,
@@ -45,7 +50,7 @@ module.exports = {
         type: Sequelize.DATE
       },
       deleted_at: {
-        allowNull: false,
+        allowNull: true,
         type: Sequelize.DATE
       }
     });
