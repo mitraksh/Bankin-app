@@ -40,7 +40,7 @@ const getBank = async (req, res, next) => {
 const updateBanks = async (req,res,next) => {
     try {
       const adminLogin = req.locals.user.isAdmin
-      if(adminLogin == "true"){
+      if(adminLogin == true){
         const {name, abbreviation} = req.body
         const bankID = req.params.userID
         const bank = new Bank(name, abbreviation)
@@ -59,8 +59,8 @@ const updateBanks = async (req,res,next) => {
 const deleteBanks = async (req,res,next) => {
     try {
       const adminLogin = req.locals.user.isAdmin
-      if(adminLogin == "true"){
-        const bankID = req.params.userID
+      if(adminLogin == true){
+        const bankID = req.params.bankID
         // console.log(userID)
         const bankData = await deleteBankService(bankID)
         res.status(StatusCodes.OK).json(bankData)

@@ -4,12 +4,18 @@ const {
     getAccountService,
     updateAccountService,
     deleteAccountService,
+    depositService,
+    withdrawService,
+    transferService,
+    transferToOtherService,
 } = require('../service/accounts')
 const {
   getBankService,
   getAllBanksService
 } = require('../../banks/service/banks')
 const { Account } = require('../../../view/account')
+const db = require('../../../models')
+
 
 const createAccount = async (req, res, next) => {
   try {
@@ -17,10 +23,10 @@ const createAccount = async (req, res, next) => {
     const fullname = req.locals.firstName + " "+ req.locals.lastName 
     if(adminLogin == false){
 
-    const { accountName,fullname,bankID } = req.body 
+    const { accountName,bankID } = req.body 
     const checkBank = await getBankService(bankID)
     if(checkBank){
-      const account = new Account(accountName,fullname,bankID,req.locals.user.id,1000)
+      const account = new  Account(accountName,fullname,bankID,req.locals.user.id,1000)
       const accountData = await addAccountService(account)
       res.status(StatusCodes.CREATED).json(accountData)
     }else{
@@ -80,19 +86,24 @@ const deleteAccounts = async (req,res,next) => {
     }
 }
 
-const depositAmount = async () =>{
-  const transaction = await db.sequelize.transaction()
+const depositAmount = async (req,res,next) =>{
     try {
       const adminLogin = req.locals.user.isAdmin
+      const selfID = req.locals.user.id
+
     if(adminLogin == false){
       const {deposit,bankID} = req.body
-      const accID = req.params.accountID
       const getAccount = await getAccountService(req.params.accountID)
-      const newBalance = getAccount.balance + deposit
-      const account = new Account(getAccount.acc_name,getAccount.cust_name,bankID,req.locals.user.id,newBalance)
-      const depositMoney = await deposit(transaction,accID,req.locals.user.id,bankID) 
-      await transaction.commit()
-
+      console.log("getAccount",getAccount.balance)
+      if(selfID == getAccount.cust_id){
+        const newBalance = getAccount.balance + deposit
+        const account = new Account(getAccount.acc_name,getAccount.cust_name,bankID,req.locals.user.id,newBalance)
+        const depositIntoAccount = await depositService(account,req.params.accountID,req.locals.user.id,bankID)
+        res.status(StatusCodes.OK).json(depositIntoAccount)
+      }else{
+        res.status(StatusCodes.OK).send("You cannot deposit into another customer's account")
+      }
+      
     }else{
       res.status(StatusCodes.EXPECTATION_FAILED).send("Only Customers can DEPOSIT into their Accounts");
   
@@ -103,19 +114,31 @@ const depositAmount = async () =>{
     }
 }
 
-const withdrawAmount = async () =>{
-  const transaction = await db.sequelize.transaction()
+const withdrawAmount = async (req,res,next) =>{
   try {
     const adminLogin = req.locals.user.isAdmin
+    const selfID = req.locals.user.id
+
   if(adminLogin == false){
     const {withdraw,bankID} = req.body
     const accID = req.params.accountID
     const getAccount = await getAccountService(req.params.accountID)
-    const newBalance = getAccount.balance - withdraw
-    const account = new Account(getAccount.acc_name,getAccount.cust_name,bankID,req.locals.user.id,newBalance)
-    const depositMoney = await account.deposit(transaction,accID,req.locals.user.id,bankID) 
-    await transaction.commit()
+    console.log("cust id",getAccount.cust_id)
+    if(selfID == getAccount.cust_id){
+      if((getAccount.balance - withdraw )<= 0){
+        res.status(StatusCodes.OK).send("NO balance left in your Account!!! Transaction Failed")
+        return 
+      }
+      const newBalance = getAccount.balance - withdraw
+      const account = new Account(getAccount.acc_name,getAccount.cust_name,bankID,req.locals.user.id,newBalance)
+      const withdrawFromAccount = await withdrawService(account,req.params.accountID,req.locals.user.id,bankID)
+      res.status(StatusCodes.OK).json(withdrawFromAccount)
+  
+    }else{
+      res.status(StatusCodes.OK).send("You cannot withdraw from another customer's account")
 
+    }
+   
   }else{
     res.status(StatusCodes.EXPECTATION_FAILED).send("Only Customers can WITHDRAW into their Accounts");
 
@@ -126,7 +149,7 @@ const withdrawAmount = async () =>{
   }
 }
 
-const transferToOthers = async () =>{
+const transferToOthers = async (req,res,next) =>{
   const transaction = await db.sequelize.transaction()
   try {
     const adminLogin = req.locals.user.isAdmin
@@ -139,19 +162,22 @@ const transferToOthers = async () =>{
     }
     const getAccount = await getAccountService(req.params.accountID)
     const getToAccount = await getAccountService(toAccountID)
-
+    if((getAccount.balance - withdraw )<= 0){
+      res.status(StatusCodes.OK).send("NO balance left in your Account!!! Transaction Failed")
+      return 
+    }
     const newBalance = getAccount.balance - transfer
     const newToBalance = getToAccount.balance + transfer
-
-    const account = new Account(getAccount.acc_name,getAccount.cust_name,bankID,req.locals.user.id,newBalance)
-    const depositMoney = await account.deposit(transaction,accID,req.locals.user.id,bankID) 
-
-    await transaction.commit()
-
+    
+    const account = new Account(getAccount.acc_name,getAccount.cust_name,getAccount.bank_id,req.locals.user.id,newBalance)
+    const transferServices =  await transferService(account,accID,req.locals.user.id,bankID)
+    res.status(StatusCodes.OK).json(transferServices)
+    
     const accountTo = new Account(getToAccount.acc_name,getToAccount.cust_name,toAccountID,custID,newToBalance)
-    const transferTo = await accountTo.deposit(transaction,accID,req.locals.user.id,bankID) 
+    const transferToOtherServices =  await transferService(accountTo,toAccountID,custID,bankID)
 
     await transaction.commit()
+    res.status(StatusCodes.OK).json(transferToOtherServices)
 
   }else{
     res.status(StatusCodes.EXPECTATION_FAILED).send("Only Customers can TRANSFER into their Accounts");

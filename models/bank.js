@@ -11,6 +11,9 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      bank.hasMany(models.accounts,{
+        foreignKey: "bank_id"
+      })
     }
   }
   bank.init({
@@ -20,6 +23,7 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'bank',
     underscored: true,
+    paranoid: true
   });
   return bank;
 };

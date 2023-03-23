@@ -82,9 +82,9 @@ class Account {
         }
       }
 
-      static async deposit(transaction,accountID,customerID,bankID) {
+        async deposit(transaction,accountID,customerID,bankID) {
         try {
-            const result = await db.accounts.update({
+            const result = await db.accounts.update(this.createPayload(),{
                 where: {
                 id: accountID,
                 cust_id: customerID,
