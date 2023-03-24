@@ -34,7 +34,8 @@ class Bank {
         const result = await db.bank.findOne({
             where:{
             id: bankID,
-            }
+            },
+            attributes: ['id','name','abbreviation']
         })
 
         return result
@@ -46,7 +47,9 @@ class Bank {
 
     static async getAllBanks(){
         try {
-        const result = await db.bank.findAll()
+        const result = await db.bank.findAll({
+            attributes: ['id','name','abbreviation']
+        })
 
         return result
             

@@ -10,7 +10,9 @@ const {
     transferToOtherService,
     recordTx,
     torecordTx,
-    getLedgerService
+    getLedgerService,
+    getPassbookService,
+    getBankLogsService
 } = require('../service/accounts')
 const {
   getBankService,
@@ -200,12 +202,10 @@ const transferToOthers = async (req,res,next) =>{
     const transferServices =  await transferService(account,accID,req.locals.user.id,getAccount.bank_id,)
     const tx = new Transactions(selfID,tocustID,req.params.accountID,toAccountID,getAccount.bank_id,tobankID,transfer,"Debited")
     const recordtx = await recordTx(tx)
-    console.log("acc")
     const accountTo = new Account(getToAccount.acc_name,getToAccount.cust_name,toAccountID,tocustID,newToBalance)
     const transferToOtherServices =  await transferToOtherService(accountTo,toAccountID,tocustID,tobankID)
     const totx = new Transactions(tocustID,selfID,toAccountID,req.params.accountID,tobankID,getAccount.bank_id,transfer,"Credited")
     const torecordtx = await torecordTx(totx)
-    console.log("to acc")
     res.status(StatusCodes.OK).json(transferToOtherServices)
   }else{
     const getallbanks = await getAllBanksService()
@@ -232,7 +232,59 @@ const getBankLedger = async (req,res,next) => {
     next(error)
   }
 }
+const getPassbook = async (req,res,next) => {
+  try {
+    const passbook = await getPassbookService(req.params.customerID)
+    res.status(StatusCodes.OK).json(passbook)
+  } catch (error) {
+    console.error(error)
+    next(error)
+  }
+}
+const getBankLogs = async (req,res,next) => {
+  try {
+    let getDate = req.body.fromDate
+    let toDate = req.body.toDate
+    console.log('toDate',toDate)
+    if(getDate.includes('/') == true || toDate.includes('/') == true){
+      res.status(StatusCodes.OK).send('Date format should be in (DD-MM-YYY)')
+      return 
+    }
 
+     let toDateString = ''
+
+    if(toDate == ""){
+      toDate = new Date()
+      toDateString = toDate.toISOString().slice(0, 19).replace('T', ' ');
+      console.log('toDateString',toDateString)
+
+    }else{
+      toDate = toDate.split("-");
+      var tonewDate = new Date( toDate[2], toDate[1] - 1, toDate[0]);
+      toDateString = tonewDate.toISOString().slice(0, 19).replace('T', ' ');
+    }
+
+    getDate = getDate.split("-");
+
+    // console.log("getDate",getDate)
+    if(getDate[0].length > 2 || getDate[1].length > 2){
+      res.status(StatusCodes.OK).send('Date format should be in (DD-MM-YYY)')
+      return 
+    }
+    let newDate = new Date( getDate[2], getDate[1] - 1, getDate[0]);
+
+    const dateString = newDate.toISOString().slice(0, 19).replace('T', ' ');
+
+
+    console.log("newDate",newDate)
+
+    const logs = await getBankLogsService(req.params.bankID,dateString,toDateString)
+    res.status(StatusCodes.OK).json(logs)
+  } catch (error) {
+    console.error(error)
+    next(error)
+  }
+}
 module.exports = {
   createAccount,
   getAccount,
@@ -241,5 +293,7 @@ module.exports = {
   depositAmount,
   withdrawAmount,
   transferToOthers,
-  getBankLedger
+  getBankLedger,
+  getPassbook,
+  getBankLogs
 }

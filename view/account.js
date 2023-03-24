@@ -51,7 +51,7 @@ class Account {
     }
 
 
-    static async updateAccount(transaction,accountID){
+    async updateAccount(transaction,accountID){
         try {
         const result = await db.accounts.update(this.createPayload(),{
             where:{

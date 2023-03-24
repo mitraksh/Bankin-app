@@ -119,6 +119,22 @@ const getLedgerService = async (bankID) => {
     console.error(error)
   }
 }
+const getPassbookService = async (customerID) =>{
+  try {
+    const passbook = await Transactions.getTransactionsbyCustID(customerID)
+    return passbook
+  } catch (error) {
+    console.error(error)
+  }
+}
+const getBankLogsService = async (bankID,fromDate,toDate) =>{
+  try {
+    const logs = await Transactions.getBankLogs(bankID,fromDate,toDate)
+    return logs
+  } catch (error) {
+    console.error(error)
+  }
+} 
 module.exports = {
     addAccountService,
     getAccountService,
@@ -130,5 +146,7 @@ module.exports = {
     transferToOtherService,
     recordTx,
     torecordTx,
-    getLedgerService
+    getLedgerService,
+    getPassbookService,
+    getBankLogsService
 }
