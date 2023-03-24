@@ -28,7 +28,7 @@ const getAccountService = async accountID => {
 const updateAccountService = async (account,accountID) => {
   const transaction = await db.sequelize.transaction()
   try {
-    const accountupdate = await Account.deposit(transaction,accountID)
+    const accountupdate = await account.updateAccount(transaction,accountID)
     await transaction.commit()
     return accountupdate
   } catch (error) {

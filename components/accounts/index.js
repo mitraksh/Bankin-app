@@ -23,6 +23,7 @@ accountRouter.get('/logs/:bankID', JwtToken.verify, getBankLogs)
 accountRouter.put('/deposit/:accountID', JwtToken.verify, depositAmount)
 accountRouter.put('/withdraw/:accountID', JwtToken.verify, withdrawAmount)
 accountRouter.put('/transfer/:accountID', JwtToken.verify, transferToOthers)
+accountRouter.put('/:accountID', JwtToken.verify, updateAccounts)
 accountRouter.delete('/:accountID', JwtToken.verify, deleteAccounts)
 
 

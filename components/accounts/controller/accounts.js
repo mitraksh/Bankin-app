@@ -64,11 +64,26 @@ const getAccount = async (req, res, next) => {
 
 const updateAccounts = async (req,res,next) => {
     try {
-        const {name, abbreviation} = req.body
-        const accountid = req.params.accountID
-        const account = new Account(name, abbreviation)
-        const accountData = await updateAccountService(account,accountid)
+      const adminLogin = req.locals.user.isAdmin
+      if(adminLogin == false){
+       const getaccountData = await getAccountService(req.params.accountID)
+      const { accountName,custName,bankID } = req.body 
+      const checkBank = await getBankService(bankID)
+      if(checkBank){
+        const account = new Account(accountName,custName,bankID,req.locals.user.id,getaccountData.balance)
+        const accountData = await updateAccountService(account,req.params.accountID)
         res.status(StatusCodes.OK).json(accountData)
+
+      }else{
+        const getallbanks = await getAllBanksService()
+        res.status(StatusCodes.EXPECTATION_FAILED).send("Bank not found, try another bank from the list \n"+JSON.stringify(getallbanks))
+    
+      }
+      
+      }else{
+        res.status(StatusCodes.EXPECTATION_FAILED).send("Only Customers can create their Accounts");
+    
+      }
     } catch (error) {
         console.error(error)
         next(error)
